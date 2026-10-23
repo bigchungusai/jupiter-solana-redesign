@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Jupiter Redesign — Intent Studio & Execution Guard (by big-chungus)</title>
+<style>
+  :root {
+    --bg: #0b0e14;
+    --panel: #131822;
+    --panel-elev: #1a2130;
+    --border: #263044;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #c7f284;
+    --accent-teal: #2dd4bf;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif; }
+  body { background: var(--bg); color: var(--text); min-height: 100vh; padding: 28px 20px 60px; }
+  .container { max-width: 1180px; margin: 0 auto; }
+  header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; padding-bottom: 22px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .badge { display: inline-block; background: rgba(199,242,132,0.12); color: var(--accent); border: 1px solid rgba(199,242,132,0.35); border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+  h1 { font-size: 24px; font-weight: 800; margin-top: 6px; }
+  .sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .controls { display: flex; gap: 10px; background: var(--panel); padding: 6px; border-radius: 12px; border: 1px solid var(--border); }
+  .btn { background: transparent; color: var(--muted); border: 0; padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; transition: 0.15s; }
+  .btn.active { background: var(--accent); color: #0b0e14; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .screen-card { background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 22px; position: relative; }
+  .screen-card.after { border-color: rgba(199,242,132,0.45); box-shadow: 0 12px 40px rgba(0,0,0,0.45); }
+  .tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 10px; border-radius: 6px; display: inline-block; margin-bottom: 14px; }
+  .tag.before-tag { background: rgba(239,68,68,0.15); color: #fca5a5; }
+  .tag.after-tag { background: rgba(199,242,132,0.16); color: var(--accent); }
+  .pain-list { margin-bottom: 16px; display: grid; gap: 8px; }
+  .pain-item { font-size: 13px; color: var(--muted); background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 8px; border-left: 3px solid var(--danger); }
+  .win-item { font-size: 13px; color: #dbeafe; background: rgba(45,212,191,0.06); padding: 8px 12px; border-radius: 8px; border-left: 3px solid var(--accent); }
+  .mockup { background: #0e131d; border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-top: 12px; transition: 0.25s; }
+  .mobile-mode .mockup { max-width: 375px; margin: 12px auto 0; border-width: 6px; border-color: #222938; border-radius: 34px; padding: 16px; }
+  .tab-bar { display: flex; gap: 6px; background: #151c28; padding: 4px; border-radius: 10px; margin-bottom: 14px; }
+  .tab-pill { flex: 1; text-align: center; font-size: 12px; font-weight: 700; padding: 8px 6px; border-radius: 7px; color: var(--muted); cursor: pointer; }
+  .tab-pill.active { background: var(--panel-elev); color: var(--accent); border: 1px solid rgba(199,242,132,0.3); }
+  .token-box { background: var(--panel-elev); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+  .row { display: flex; justify-content: space-between; align-items: center; }
+  .token-badge { display: inline-flex; align-items: center; gap: 8px; background: #252f42; padding: 6px 12px; border-radius: 999px; font-weight: 700; font-size: 14px; }
+  .amt { font-size: 24px; font-weight: 800; text-align: right; }
+  .chips { display: flex; gap: 6px; margin-top: 8px; }
+  .chip { font-size: 11px; padding: 3px 8px; border-radius: 6px; background: #232d3f; color: var(--muted); cursor: pointer; }
+  .chip:hover { color: var(--text); border: 1px solid var(--accent); }
+  .guard-strip { background: rgba(199,242,132,0.07); border: 1px solid rgba(199,242,132,0.28); border-radius: 12px; padding: 12px; margin: 12px 0; }
+  .bar-track { height: 6px; background: #263044; border-radius: 99px; overflow: hidden; margin: 8px 0; }
+  .bar-fill { height: 100%; width: 92%; background: linear-gradient(90deg, #2dd4bf, #c7f284); }
+  .cta { width: 100%; padding: 14px; border-radius: 12px; border: 0; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 8px; }
+  .cta-before { background: #334155; color: #e2e8f0; }
+  .cta-after { background: linear-gradient(90deg, #2dd4bf, #c7f284); color: #0b0e14; }
+  .meta-note { font-size: 12px; color: var(--muted); margin-top: 24px; padding: 16px; background: var(--panel); border-radius: 12px; border: 1px solid var(--border); line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="container" id="appRoot">
+  <header>
+    <div>
+      <span class="badge">Superteam India Design Bounty · $1,500 USDC</span>
+      <h1>Jupiter Redesign: Intent Studio &amp; Execution Guard</h1>
+      <p class="sub">Interactive Before / After UX Comparison · Desktop &amp; One-Thumb Mobile Variations · Designed by <strong>big-chungus</strong></p>
+    </div>
+    <div class="controls">
+      <button class="btn active" id="btnDesktop" onclick="setViewport('desktop')">Desktop View (1440px Spec)</button>
+      <button class="btn" id="btnMobile" onclick="setViewport('mobile')">Mobile One-Thumb View (375px Spec)</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- BEFORE SCREEN -->
+    <div class="screen-card">
+      <span class="tag before-tag">BEFORE · Current Jupiter Swap UX</span>
+      <div class="pain-list">
+        <div class="pain-item"><strong>1. Hidden Slippage &amp; MEV Risk:</strong> Dynamic slippage (up to 1.5%) and priority fee settings are hidden behind small top-right gear icons, causing unexpected fills or sandwich anxiety.</div>
+        <div class="pain-item"><strong>2. Context-Resetting Mode Tabs:</strong> Switching from Instant Swap to Limit Order or DCA navigates to a completely separate view and resets user flow.</div>
+        <div class="pain-item"><strong>3. Cryptic Route Details:</strong> Multi-hop venue splits are shown only in tiny footer text after quote resolution.</div>
+      </div>
+
+      <div class="mockup">
+        <div class="row" style="margin-bottom:12px;">
+          <span style="font-size:12px;color:var(--muted);">Swap · Limit · DCA · Perps (Separate Pages)</span>
+          <span style="font-size:11px;background:#1e293b;padding:4px 8px;border-radius:6px;color:#94a3b8;">⚙ Dynamic 0.50%</span>
+        </div>
+        <div class="token-box">
+          <div class="row"><span style="font-size:12px;color:var(--muted);">You're Selling</span><span style="font-size:12px;color:var(--muted);">Bal: 14.50 SOL</span></div>
+          <div class="row" style="margin-top:8px;">
+            <span class="token-badge">◎ SOL</span>
+            <span class="amt">5.00</span>
+          </div>
+        </div>
+        <div class="token-box">
+          <div class="row"><span style="font-size:12px;color:var(--muted);">To Receive (Estimated)</span><span style="font-size:12px;color:var(--warn);">Slippage hidden in modal</span></div>
+          <div class="row" style="margin-top:8px;">
+            <span class="token-badge">$ USDC</span>
+            <span class="amt">942.10</span>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);padding:6px 2px;">1 SOL ≈ 188.42 USDC · 3 hops via Raydium + Meteora + Phoenix</div>
+        <button class="cta cta-before">Swap (Unprotected Quote)</button>
+      </div>
+    </div>
+
+    <!-- AFTER SCREEN -->
+    <div class="screen-card after">
+      <span class="tag after-tag">AFTER · Redesigned "Intent Studio &amp; Execution Guard"</span>
+      <div class="pain-list">
+        <div class="win-item"><strong>1. Inline Intent Switcher:</strong> Switch seamlessly between <em>Instant Fill</em>, <em>Target Limit</em>, and <em>Auto-Split (TWAP/DCA)</em> inside one card without losing pair context.</div>
+        <div class="win-item"><strong>2. Visual Execution Guard Bar:</strong> Shows exact <strong>Guaranteed Minimum ($940.85)</strong> vs <strong>Expected Fill ($942.10)</strong> and 1-tap Jito MEV Zero-Sandwich Shield.</div>
+        <div class="win-item"><strong>3. Smart Split Recommendation:</strong> Automatically detects when splitting a high-impact swap into 3× 20-second micro-fills saves more than fees.</div>
+      </div>
+
+      <div class="mockup">
+        <div class="tab-bar">
+          <div class="tab-pill active" id="modeInstant" onclick="setIntent('instant')">⚡ Instant Swap</div>
+          <div class="tab-pill" id="modeLimit" onclick="setIntent('limit')">🎯 Target Price</div>
+          <div class="tab-pill" id="modeSplit" onclick="setIntent('split')">⏱ Smart Split (3×)</div>
+        </div>
+
+        <div class="token-box">
+          <div class="row">
+            <span style="font-size:12px;color:var(--muted);">You Pay</span>
+            <span style="font-size:12px;color:var(--accent);">Balance: 14.50 SOL</span>
+          </div>
+          <div class="row" style="margin-top:8px;">
+            <span class="token-badge">◎ SOL</span>
+            <span class="amt" id="payAmt">5.00</span>
+          </div>
+          <div class="chips">
+            <span class="chip" onclick="setSol(3.62)">25%</span>
+            <span class="chip" onclick="setSol(7.25)">50%</span>
+            <span class="chip" onclick="setSol(10.87)">75%</span>
+            <span class="chip" onclick="setSol(14.48)">MAX (Leave Gas)</span>
+          </div>
+        </div>
+
+        <div class="token-box">
+          <div class="row">
+            <span style="font-size:12px;color:var(--muted);">You Receive (Net After Fees)</span>
+            <span style="font-size:12px;color:var(--accent-teal);" id="intentBadge">MEV Shield Active · 0.04% Impact</span>
+          </div>
+          <div class="row" style="margin-top:8px;">
+            <span class="token-badge">$ USDC</span>
+            <span class="amt" id="recvAmt" style="color:var(--accent);">942.10</span>
+          </div>
+        </div>
+
+        <!-- NEW FEATURE: VISUAL EXECUTION GUARD -->
+        <div class="guard-strip">
+          <div class="row" style="font-size:12px;">
+            <span><strong>Execution Guard:</strong> Guaranteed Floor <strong id="floorAmt" style="color:var(--text);">$940.85 USDC</strong></span>
+            <span style="color:var(--accent);">99.4% 1-Slot Landing</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill"></div></div>
+          <div class="row" style="font-size:11px;color:var(--muted);">
+            <span id="routeSummary">Route: 65% Meteora DLMM + 35% Phoenix CLOB</span>
+            <span>Priority + Jito Shield: <strong>$0.003</strong></span>
+          </div>
+        </div>
+
+        <button class="cta cta-after" id="ctaBtn">Slide / Click to Execute Protected Swap →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="meta-note">
+    <strong>Design System &amp; Component Architecture (by big-chungus):</strong>
+    Built on an 8pt spatial grid with WCAG AAA contrast ratios on deep obsidian surfaces (<code>#0B0E14</code> / <code>#131822</code>) and semantic lime-teal execution indicators (<code>#C7F284</code> / <code>#2DD4BF</code>). Try clicking the <strong>Desktop / Mobile</strong> switcher at the top right, the <strong>Instant / Target Price / Smart Split</strong> intent pills, or the <strong>25% / 50% / 75% / MAX</strong> quick-chips to inspect the interactive states.
+  </div>
+</div>
+
+<script>
+  let currentSol = 5.0;
+  let currentIntent = 'instant';
+  const rate = 188.42;
+
+  function setViewport(mode) {
+    const root = document.getElementById('appRoot');
+    document.getElementById('btnDesktop').classList.toggle('active', mode === 'desktop');
+    document.getElementById('btnMobile').classList.toggle('active', mode === 'mobile');
+    root.classList.toggle('mobile-mode', mode === 'mobile');
+  }
+
+  function setSol(val) {
+    currentSol = val;
+    renderQuote();
+  }
+
+  function setIntent(mode) {
+    currentIntent = mode;
+    document.getElementById('modeInstant').classList.toggle('active', mode === 'instant');
+    document.getElementById('modeLimit').classList.toggle('active', mode === 'limit');
+    document.getElementById('modeSplit').classList.toggle('active', mode === 'split');
+    renderQuote();
+  }
+
+  function renderQuote() {
+    document.getElementById('payAmt').textContent = currentSol.toFixed(2);
+    let mult = 1.0;
+    if (currentIntent === 'limit') mult = 1.015;
+    if (currentIntent === 'split') mult = 1.003;
+    const out = currentSol * rate * mult;
+    const floor = out * (currentIntent === 'limit' ? 1.0 : 0.9987);
+    document.getElementById('recvAmt').textContent = out.toFixed(2);
+    document.getElementById('floorAmt').textContent = '$' + floor.toFixed(2) + ' USDC';
+    if (currentIntent === 'instant') {
+      document.getElementById('intentBadge').textContent = 'MEV Shield Active · 0.04% Impact';
+      document.getElementById('routeSummary').textContent = 'Route: 65% Meteora DLMM + 35% Phoenix CLOB';
+      document.getElementById('ctaBtn').textContent = 'Execute Protected Swap (' + currentSol.toFixed(2) + ' SOL) →';
+    } else if (currentIntent === 'limit') {
+      document.getElementById('intentBadge').textContent = 'Target: $191.25 / SOL (+1.5%) · Zero Slippage';
+      document.getElementById('routeSummary').textContent = 'Keeper Fill: Escrowed on-chain · Cancels auto in 7d';
+      document.getElementById('ctaBtn').textContent = 'Place Protected Limit Order →';
+    } else {
+      document.getElementById('intentBadge').textContent = 'Smart Split: 3 Fills × 20s · Saves +$2.80 Impact';
+      document.getElementById('routeSummary').textContent = 'Auto-TWAP across 3 blocks with Jito Sandwich Guard';
+      document.getElementById('ctaBtn').textContent = 'Start 60-Second Smart Split →';
+    }
+  }
+</script>
+</body>
+</html>
